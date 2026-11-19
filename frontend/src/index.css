@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-serif: "Fraunces", Georgia, serif;
+
+  --color-fondo: #f4f1ea;
+  --color-panel: #fffdf8;
+  --color-tinta: #1d1b16;
+  --color-suave: #6c675c;
+  --color-linea: #ddd6c6;
+  --color-ok: #2f7a45;
+  --color-ok-suave: #e8f4ec;
+  --color-aviso: #b7791f;
+  --color-aviso-suave: #fbf2df;
+  --color-error: #b23a2e;
+  --color-error-suave: #f8e6e3;
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body { @apply bg-fondo text-tinta font-sans text-[15px] antialiased; }
+  input, textarea, select { @apply text-tinta; }
+}
+
+@layer components {
+  .campo {
+    @apply w-full rounded-lg border border-linea bg-white px-3 py-2 text-[15px] outline-none
+           focus:border-transparent focus:ring-2 focus:ring-[#c9bfa8] disabled:bg-fondo disabled:text-suave;
+  }
+  .etiqueta { @apply flex flex-col gap-1 text-sm text-suave; }
+  .tarjeta { @apply rounded-xl border border-linea bg-panel; }
+}
+
+@keyframes aparecer { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.aparecer { animation: aparecer .18s ease-out; }

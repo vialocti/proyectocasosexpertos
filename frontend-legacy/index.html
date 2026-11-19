@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mesa de Expertos · Simulador de casos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">◆</span> Mesa de Expertos</div>
+    <div id="demoBadge" class="demo-badge hidden">MODO DEMO · sin API key</div>
+    <button id="btnVolver" class="btn ghost hidden">← Casos</button>
+    <button id="btnHerramientas" class="btn ghost">🧮 Herramientas</button>
+  </header>
+
+  <!-- ============ PANTALLA 1: SELECCIÓN DE CASO ============ -->
+  <main id="pantallaCasos" class="pantalla">
+    <section class="hero">
+      <h1>Resolvé el caso. Convencé a la mesa.</h1>
+      <p>Elegí un caso, armá tu solución paso a paso y defendela ante dos evaluadores con miradas distintas:
+        una <strong>técnica</strong> y otra <strong>económica</strong>. El objetivo es llegar a la solución más favorable para ambos.</p>
+    </section>
+
+    <section class="config-agentes">
+      <div class="agente-config" data-agente="tecnico">
+        <div class="avatar tec">LB</div>
+        <div>
+          <h3>Ing. Laura Benítez</h3>
+          <p class="muted">Evaluadora técnica · eficiencia, automatización, normativa</p>
+          <label>Postura
+            <select id="posturaTecnico">
+              <option value="conservador">Conservadora</option>
+              <option value="moderado">Moderada</option>
+              <option value="audaz" selected>Audaz</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="agente-config" data-agente="economico">
+        <div class="avatar eco">RF</div>
+        <div>
+          <h3>Cr. Ricardo Ferraro</h3>
+          <p class="muted">Evaluador económico · presupuesto, repago, VAN, riesgo</p>
+          <label>Postura
+            <select id="posturaEconomico">
+              <option value="conservador" selected>Conservador</option>
+              <option value="moderado">Moderado</option>
+              <option value="audaz">Audaz</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section id="listaCasos" class="lista-casos"></section>
+  </main>
+
+  <!-- ============ PANTALLA 2: ESPACIO DE TRABAJO ============ -->
+  <main id="pantallaTrabajo" class="pantalla hidden">
+    <div class="estado-bar">
+      <div class="kpis" id="kpis"></div>
+      <div class="veredictos">
+        <div class="veredicto" id="verTecnico"><span class="avatar sm tec">LB</span><span class="v-label">Sin revisar</span></div>
+        <div class="veredicto" id="verEconomico"><span class="avatar sm eco">RF</span><span class="v-label">Sin revisar</span></div>
+      </div>
+    </div>
+
+    <div class="workspace">
+      <!-- Columna izquierda: caso -->
+      <aside class="col caso" id="panelCaso"></aside>
+
+      <!-- Columna central: constructor de solución -->
+      <section class="col constructor">
+        <nav class="pasos" id="pasos"></nav>
+        <div id="paso-diagnostico" class="paso">
+          <h2><span class="num">1</span> Diagnóstico y costo actual</h2>
+          <p class="ayuda">¿Cuánto se gasta hoy y en qué? Desagregá por uso final. Calculá el costo anual actual.</p>
+          <textarea data-campo="diagnostico" rows="9" placeholder="Ej.: Costo de energía actual = 620.000 kWh × 0,13 = 80.600 USD/año. Los motores representan el 48%…"></textarea>
+        </div>
+        <div id="paso-cambiosTecnicos" class="paso hidden">
+          <h2><span class="num">2</span> Cambios técnicos</h2>
+          <p class="ayuda">¿Qué equipos o instalaciones cambiarías? Indicá cantidades, potencias y el ahorro esperado de cada medida.</p>
+          <textarea data-campo="cambiosTecnicos" rows="9" placeholder="Ej.: Reemplazo de 260 tubos 2×36 W por LED 2×18 W → ahorro de …"></textarea>
+        </div>
+        <div id="paso-automatizacion" class="paso hidden">
+          <h2><span class="num">3</span> Automatización y control</h2>
+          <p class="ayuda">¿Qué automatizarías? Sensores, PLC, variadores, gestión de demanda, medición y verificación.</p>
+          <textarea data-campo="automatizacion" rows="9" placeholder="Ej.: Sensores de presencia y luz natural; control de presión del compresor; medidores por tablero…"></textarea>
+        </div>
+        <div id="paso-presupuesto" class="paso hidden">
+          <h2><span class="num">4</span> Presupuesto de la inversión</h2>
+          <p class="ayuda">Cargá todos los ítems: equipos, instalación, ingeniería, puesta en marcha, imprevistos.</p>
+          <table class="tabla-items">
+            <thead><tr><th>Concepto</th><th>Cant.</th><th>Costo unit. (USD)</th><th>Subtotal</th><th></th></tr></thead>
+            <tbody id="itemsBody"></tbody>
+            <tfoot><tr><td colspan="3"><button class="btn ghost" id="btnAddItem">+ Agregar ítem</button></td><td id="totalItems" class="num-cell"></td><td></td></tr></tfoot>
+          </table>
+        </div>
+        <div id="paso-ahorro" class="paso hidden">
+          <h2><span class="num">5</span> Ahorro y amortización</h2>
+          <div class="grid-3">
+            <label>Ahorro anual estimado (USD)<input type="number" data-campo="ahorroAnual" min="0" step="100" /></label>
+            <label>Costo operativo / mantenimiento adicional (USD/año)<input type="number" data-campo="costoOperativoAnual" min="0" step="100" /></label>
+            <label>Vida útil (años)<input type="number" data-campo="vidaUtil" min="1" max="30" /></label>
+          </div>
+          <label class="full">Justificación del ahorro (medida por medida)
+            <textarea data-campo="justificacionAhorro" rows="5" placeholder="Ej.: LED: 260 × 36 W × 4.800 h = 44.900 kWh/año → 5.840 USD…"></textarea>
+          </label>
+          <div class="grafico-wrap">
+            <h4>Flujo de fondos acumulado</h4>
+            <svg id="grafico" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="acciones">
+          <button class="btn ghost" id="btnPrev">← Anterior</button>
+          <button class="btn ghost" id="btnNext">Siguiente →</button>
+          <span class="spacer"></span>
+          <button class="btn primary" id="btnRevision">Enviar a revisión de la mesa</button>
+        </div>
+      </section>
+
+      <!-- Columna derecha: agentes -->
+      <aside class="col agentes">
+        <div class="tabs">
+          <button class="tab active" data-tab="tecnico"><span class="avatar sm tec">LB</span> Técnica</button>
+          <button class="tab" data-tab="economico"><span class="avatar sm eco">RF</span> Económica</button>
+          <button class="tab" data-tab="debate">⚖ Mesa</button>
+        </div>
+        <div class="tab-panel" id="tab-tecnico"><div class="chat" id="chat-tecnico"></div></div>
+        <div class="tab-panel hidden" id="tab-economico"><div class="chat" id="chat-economico"></div></div>
+        <div class="tab-panel hidden" id="tab-debate">
+          <p class="ayuda">Los dos evaluadores debaten tu propuesta y buscan juntos la solución más favorable.</p>
+          <button class="btn primary full" id="btnDebate">Convocar debate</button>
+          <div id="debate"></div>
+        </div>
+        <form class="chat-input" id="chatForm">
+          <input id="chatMsg" placeholder="Respondé o preguntale al evaluador…" autocomplete="off" />
+          <button class="btn primary">Enviar</button>
+        </form>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ============ PANEL DE HERRAMIENTAS ============ -->
+  <aside id="herramientas" class="drawer hidden" aria-label="Herramientas">
+    <div class="drawer-cab">
+      <div class="tabs">
+        <button class="tab active" data-htab="calc">🧮 Calculadora</button>
+        <button class="tab" data-htab="ia">✦ Asistente IA</button>
+      </div>
+      <button class="btn-x" id="btnCerrarHerr" title="Cerrar">×</button>
+    </div>
+
+    <div class="hpanel" id="htab-calc">
+      <form id="calcForm" class="calc-form">
+        <input id="calcExpr" placeholder="Ej.: 620000 * 0,13  ·  van(12%; -50000; 18000; 18000; 18000)" autocomplete="off" spellcheck="false" />
+        <button class="btn primary">=</button>
+      </form>
+      <div id="calcError" class="calc-error"></div>
+      <div class="calc-teclas" id="calcTeclas"></div>
+      <h5>Historial <span class="muted">(clic para copiar el resultado)</span></h5>
+      <ul id="calcHist" class="calc-hist"></ul>
+      <details class="calc-ayuda">
+        <summary>Funciones disponibles</summary>
+        <p>Operadores <code>+ - * / ^ ( )</code> y <code>%</code> (12% = 0,12). Decimales con coma o punto; separá argumentos con <code>;</code>.</p>
+        <ul>
+          <li><code>raiz(x)</code>, <code>ln(x)</code>, <code>log(x)</code>, <code>exp(x)</code>, <code>abs(x)</code>, <code>redondear(x; n)</code></li>
+          <li><code>sen cos tan</code> (radianes), <code>min(...)</code>, <code>max(...)</code>, <code>suma(...)</code>, <code>pi</code>, <code>e</code>, <code>ans</code> (último resultado)</li>
+          <li><code>van(tasa; f0; f1; …)</code>: valor actual neto, f0 es la inversión (negativa)</li>
+          <li><code>tir(f0; f1; …)</code>: tasa interna de retorno</li>
+          <li><code>repago(inversión; flujo anual)</code>: años de repago simple</li>
+          <li><code>cuota(tasa; n; préstamo)</code>: cuota fija de un préstamo</li>
+          <li><code>va(tasa; n; flujo)</code>: valor actual de un flujo anual constante</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="hpanel hidden" id="htab-ia">
+      <p class="ayuda">Consultá conceptos, fórmulas, precios o datos técnicos de referencia. El asistente orienta, pero no resuelve el caso por vos.</p>
+      <div class="chat" id="chatIA"></div>
+      <form class="chat-input ia-input" id="iaForm">
+        <label class="chk"><input type="checkbox" id="iaWeb" /> Buscar en la web</label>
+        <div class="fila">
+          <input id="iaMsg" placeholder="Ej.: ¿Cuánto cuesta un variador de 30 kW?" autocomplete="off" />
+          <button class="btn primary">Enviar</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+
+  <div id="cargando" class="cargando hidden"><div class="spinner"></div><span id="cargandoTxt">Los evaluadores están leyendo tu propuesta…</span></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
